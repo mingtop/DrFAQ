@@ -1,5 +1,5 @@
 # Dr.Covid Telegrame Demo
-* DrFAQ is a FQA demo for Dr COVID (2020), full version will be released.
+* DrFAQ is a FAQ demo for Dr COVID (2020), full version will be released.
 * Designed and implemented a NLP Question Answering architecture using spaCy, BERT language model, ElasticSearch, and Telegram Bot API.
 * DOCTOR COVID applied to SingHealth at Singapore EXPO and D’Resort with more information from [News of Dr.COVID](https://www.a-star.edu.sg/News/a-star-news/news/press-releases/singhealth-and-a-star-co-developed-smart-chatbot-to-enhance-care-for-covid-19-patients-at-community-care-facilities).
 
