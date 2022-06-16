@@ -1,1 +1,1 @@
-api_token = "1222532705:AAG6rXTIwoTD3gp5Z7cg_W8AxS6hIIeHBQY"
+api_token = "Please input you own token"
