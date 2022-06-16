@@ -3,7 +3,7 @@
 * Designed and implemented a NLP Question Answering architecture using spaCy, BERT language model, ElasticSearch, and Telegram Bot API.
 * DOCTOR COVID applied to SingHealth at Singapore EXPO and D’Resort with more information from [News of Dr.COVID](https://www.a-star.edu.sg/News/a-star-news/news/press-releases/singhealth-and-a-star-co-developed-smart-chatbot-to-enhance-care-for-covid-19-patients-at-community-care-facilities).
 
-<img src="pic/news.jpeg" width="500" height="250" />
+<img src="pic/News.jpeg" width="500" height="250" />
 
 # Requirement
 ```
