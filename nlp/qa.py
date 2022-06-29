@@ -1,5 +1,6 @@
 import torch
-from transformers import BertTokenizer, BertForQuestionAnswering
+from sentence_transformers import SentenceTransformer, util
+import pandas as pd
 
 class QA:
     """
@@ -9,14 +10,13 @@ class QA:
     How does BERT answer questions?
     Ref: https://openreview.net/pdf?id=SygMXE2vAE
     """
-    def __init__(self, text_file):
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        self.model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
+    def __init__(self, excel_file):
+        #self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        self.model = SentenceTransformer('carlosaguayo/features_and_usecases')
+        self.df = pd.read_csv(excel_file)
+        self.token_list = [self.model.encode(s) for s in self.df['Question']]
 
-        with open(text_file, 'r') as file:
-            self.passage = file.read().replace('\n', ' ')
-
-    def ask(self, question, threshold=1.0):
+    def ask(self, question, threshold=0.6):
         """Ask question to QA."""
         score, answer = self.query(question)
         print("NLP score:", score)
@@ -33,29 +33,55 @@ class QA:
         Returns (score, answer)
         Ref: https://huggingface.co/transformers/model_doc/bert.html#bertforquestionanswering
         """
-        input_text = "[CLS] " + question + " [SEP] " + self.passage + " [SEP]"
-        input_ids = self.tokenizer.encode(input_text)
-        token_type_ids = [0 if i <= input_ids.index(102) else 1 for i in range(len(input_ids))]
-        start_scores, end_scores = self.model(torch.tensor([input_ids]), token_type_ids=torch.tensor([token_type_ids]))
-        all_tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
-        score = self.compute_score(start_scores, end_scores)
-        answer = ' '.join(all_tokens[torch.argmax(start_scores): torch.argmax(end_scores) + 1])
-        return score, answer
+        #input_text = "[CLS] " + question + " [SEP] " + self.passage + " [SEP]"
+        #print(input_text)
+        #input_ids = self.tokenizer.encode(input_text)
+        #token_type_ids = [0 if i <= input_ids.index(102) else 1 for i in range(len(input_ids))]
+        #start_scores, end_scores = self.model(torch.tensor([input_ids]), token_type_ids=torch.tensor([token_type_ids]))
+        #all_tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
+        #score = self.compute_score(start_scores, end_scores)
+        #answer = ' '.join(all_tokens[torch.argmax(start_scores): torch.argmax(end_scores) + 1])
+        #return score, answer
+        max_score = 0
+        question_idx = 0
+        token_text = self.model.encode(question)
+        temp = []
+        for i, q in enumerate(self.token_list):
+            s = self.compare(token_text, q)
+            temp.append((q, i, s))
+            if s > max_score:
+                max_score = s
+                question_idx = i
+        return max_score, self.df['Answer'][question_idx]
 
-    def compute_score(self, start_scores, end_scores):
-        start_scores = torch.nn.functional.softmax(start_scores, dim=1)
-        end_scores = torch.nn.functional.softmax(end_scores, dim=1)
-        score = torch.max(start_scores) + torch.max(end_scores)
-        return round(score.item(), 3)
-
+    def get_ranks(self, question, threshold=0.8):
+        """Returns FAQ answer if similarity score exceeds threshold"""
+        max_score = 0
+        token_text = self.model.encode(question)
+        temp = []
+        for i, q in enumerate(self.token_list):
+            s = self.compare(token_text, q)
+            temp.append((i, s))
+            if s > threshold:
+                temp.append((i, s))
+            if s > max_score:
+                max_score = s       
+        rank = sorted(temp, key=lambda i: i[-1], reverse=True)
+        # print(rank[:3], "FAQ score:", max_score)
+        if max_score > threshold:
+            return rank
+        else:
+            return None
+    
+    def compare(self, embedding1, embedding2):
+        return util.pytorch_cos_sim(embedding1, embedding2).item()
+        
 
 if __name__ == "__main__":
     """Example"""
-    qa = QA()
-    qa.load_passage("School fees for one student cost $300 a month.")
-    score, answer = qa.query("How much do the school fees cost?")
-    print("Answer:", answer)
-    print("Score:", score)
-    score, answer = qa.query("How much discount is given for school fees?")
-    print("Answer:", answer)
-    print("Score:", score)
+    qa = QA("../chat/trainDataFinal.csv")
+    #score, answer = qa.query("What is Covid?")
+    #print("Answer:", answer)
+    #print("Score:", score)
+    print(qa.query("What is Covid?"))
+    
